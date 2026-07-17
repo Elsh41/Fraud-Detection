@@ -6,19 +6,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def load_data(file_path):
-    """Safely loads CSV data with error handling."""
-    try:
-        df = pd.read_csv(file_path)
-        logging.info(f"Successfully loaded {file_path} with shape {df.shape}")
-        return df
-    except FileNotFoundError as e:
-        logging.error(f"File not found at {file_path}: {str(e)}")
-        raise e
-    except Exception as e:
-        logging.error(f"Error loading file {file_path}: {str(e)}")
-        raise e
-
 def ip_to_int(ip):
     """Converts IPv4 string address to integer format."""
     try:
@@ -36,20 +23,20 @@ def merge_ip_range(fraud_df, ip_df):
     Uses merge_asof with aligned data types to avoid MergeErrors.
     """
     try:
-        # 1. Create local copies to avoid modifying original DataFrames in-place
+        # Create local copies to avoid modifying original DataFrames in-place
         fraud_temp = fraud_df.copy()
         ip_temp = ip_df.copy()
         
-        # 2. Force matching types (float64 is safest for handling both integer and float-based IP representations)
+        # Force matching types for stable merge_asof key alignment
         fraud_temp['ip_address_int'] = fraud_temp['ip_address_int'].astype(float)
         ip_temp['lower_bound_ip_address'] = ip_temp['lower_bound_ip_address'].astype(float)
         ip_temp['upper_bound_ip_address'] = ip_temp['upper_bound_ip_address'].astype(float)
         
-        # 3. Sort values (strictly required by pd.merge_asof)
+        # Sort values (strictly required by pd.merge_asof)
         fraud_sorted = fraud_temp.sort_values('ip_address_int')
         ip_sorted = ip_temp.sort_values('lower_bound_ip_address')
         
-        # 4. Perform the asof merge
+        # Perform the asof merge
         merged = pd.merge_asof(
             fraud_sorted, 
             ip_sorted, 
@@ -58,12 +45,12 @@ def merge_ip_range(fraud_df, ip_df):
             direction='backward'
         )
         
-        # 5. Invalidate rows where the user's IP exceeds the upper range bound
+        # Invalidate rows where the user's IP exceeds the upper range bound
         valid_mask = merged['ip_address_int'] <= merged['upper_bound_ip_address']
         merged.loc[~valid_mask, 'country'] = 'Unknown'
         merged['country'] = merged['country'].fillna('Unknown')
         
-        logging.info("Range-based IP lookup complete successfully with matching float64 types.")
+        logging.info("Range-based IP lookup completed successfully.")
         return merged
     except Exception as e:
         logging.error(f"Error during range-based IP merge: {str(e)}")

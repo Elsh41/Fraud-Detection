@@ -13,3 +13,6 @@ Thumbs.db
 # VS Code
 .vscode/
 data/processed/*.csv
+# Explicitly ignore serialized model artifacts and numpy binaries
+models/*.pkl
+*.npy
