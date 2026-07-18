@@ -6,17 +6,27 @@ import logging
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def ip_to_int(ip):
     """Converts IPv4 string address to integer format."""
     try:
-        if pd.isna(ip) or not isinstance(ip, (str, float, int)):
+        if pd.isna(ip):
             return np.nan
-        if isinstance(ip, (int, float)) or (isinstance(ip, str) and ip.strip().replace('.','').isdigit()):
-            return int(float(ip))
-        return struct.unpack("!I", socket.inet_aton(ip.strip()))[0]
+            
+        # If it's already a numeric type, convert directly to int
+        if isinstance(ip, (int, float)):
+            return int(ip)
+            
+        # If it's a string representing a single pure integer (e.g., "2013265921")
+        if isinstance(ip, str) and ip.strip().isdigit():
+            return int(ip.strip())
+            
+        # If it is a proper dot-decimal IP string (e.g., "120.0.0.1")
+        if isinstance(ip, str) and '.' in ip:
+            return struct.unpack("!I", socket.inet_aton(ip.strip()))[0]
+            
+        return np.nan
     except Exception:
         return np.nan
 
