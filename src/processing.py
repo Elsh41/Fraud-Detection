@@ -3,6 +3,9 @@ import numpy as np
 import socket
 import struct
 import logging
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
